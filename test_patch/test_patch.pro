@@ -1,9 +1,15 @@
 TEMPLATE = app
 CONFIG += console c++17
 CONFIG -= app_bundle
-CONFIG -= qt
+QT += testlib
+
+#CONFIG -= qt
 
 SOURCES += \
-        main.cpp
+        ../post_fire_simulation/patch.cpp \
+        main.cpp \
+        test_patch.cpp
 
-HEADERS +=
+HEADERS += \
+    ../post_fire_simulation/patch.h \
+    catch.hpp

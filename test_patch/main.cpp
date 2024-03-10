@@ -1,9 +1,9 @@
-#include <iostream>
+#define CATCH_CONFIG_MAIN
+//#include "catch.hpp"
 
-using namespace std;
+//#include <QCoreApplication>
+//#include <QTest>
+//int main(int argc, char *argv[])
+//{
 
-int main()
-{
-    cout << "Hello World!" << endl;
-    return 0;
-}
+//}
