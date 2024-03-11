@@ -1,3 +1,7 @@
+/**
+ * PATCH CLASS
+ */
+
 #include "patch.h"
 #include <vector>
 #include <string>

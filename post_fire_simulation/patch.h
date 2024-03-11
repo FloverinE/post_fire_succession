@@ -10,7 +10,6 @@
  * Every pixel representing 5 m * 5 m in the map is a patch of this class
  * containing information about the number of seeds and saplings of birch and oak
  */
-
 class patch {
 public:
     // Constructors
@@ -36,16 +35,17 @@ public:
     std::vector<int> N_height_class_3 = {0, 0};
     std::vector<int> N_height_class_4 = {0, 0};
 
-    // distance independent
+    // distance independent, i.e. distance to trees is not considered
     float mortality_rate = 0.2;        // chance of the seed/sapling dying at a timestep. constant for all patches, modified into mortality factor according to light and water availability
     float growth_rate = 0.2;           // same for growth rate, that is the chance of advancing to the next height class
     bool burnt = false;                // set to true if the patch is burnt, used for forest fire simulation
 
-    // distance dependent
+    // distance dependent, i.e. later modified according to distance to the closest tree in the MainWindow::setup_min_distance_to_tree() function
     float distance_to_tree = 0.0f;     // distance to nearest tree, used to calculate light and water availability
     float light_availability = 0.0f;   // higher at further distance to trees
     float water_availability = 1.0f;   // default max = 1, low when deadwood is removed
 
+    // no private variables for now as it was easier to not use any for now
 private:
 
 };

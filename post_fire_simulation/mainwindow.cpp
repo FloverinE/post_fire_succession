@@ -1,3 +1,90 @@
+/**
+ * ABOUT THIS PROGRAM
+ *
+ * Author:      Florian Wilms
+ * Matr.Nr.:    28725588
+ *
+ * M.FES.726 Ecological Modelling with C++
+ * Lecturer: Sebastian Hanß
+ * M.Sc. Forest Ecosystem Sciences - Ecosystem Analysis and Modelling
+ * Georg-August-Universität Göttingen
+ * 11.03.2024
+ * Winter Semester 2023/2024
+ *
+ *
+ * RESEARCH QUESTION:
+ * "What is the amount of natural regeneration in a post-fire forest landscape and how does it change over time?"
+ *
+ * This model was created after my model concept presented in the winter semester 2022/23 in the course "M.FES.111 Introduction to Ecological Modelling"
+ * Excerpt from the term paper introduction:
+ *
+ * Forest fires are a prevalent issue in Europe, with Mediterranean countries facing the main share of burnt area and
+ * the amount of fires (Tedim et al., 2015). The fire regime in Germany has so far been comparably minor in
+ * comparison to southern European forest fires of much larger scale (EFFIS, 2023). Within the period from 2001 to
+ * 2020, two thirds of German forest fires occurred within coniferous stands, while ca. 6000ha, half of the total burnt
+ * area, amounted to the federal state of Brandenburg (Gnilke & Sanders, 2021). Intent and negligence were the main
+ * identified causes of fire events. 2022 has been the single most fire-intense year so far with over 4000ha burnt (EFFIS, 2023).
+ *
+ * Post-fire regeneration, as a form of stand establishment, is a costly measure in forestry operations, as it may take
+ * decades until applied thinnings return the investment. Only at the end of rotation times, sale of merchantable wood
+ * from mature trees results in a net positive balance. Therefore, minimizing initial investments on post-fire
+ * restoration sites is a main objective for forest management.
+ *
+ * EFFIS. (2023). EFFIS Statistics Portal. Seasonal Trend for Germany. European Forest Fire Information System.
+ * https://effis.jrc.ec.europa.eu/apps/effis.statistics/seasonaltrend
+ * Gnilke, A., & Sanders, T. G. M. (2021). Forest fire history in Germany (2001-2020). Thünen Institute of Forest
+ * Ecosystems.
+ * Tedim, F., Xanthopoulos, G., & Leone, V. (2015). Forest Fires in Europe. In Wildfire Hazards, Risks and Disasters
+ * (pp. 77–99). Elsevier. https://doi.org/10.1016/B978-0-12-410434-1.00005-1
+ *
+ * MODEL GUIDE
+ *  This grid-based, spatially explicit model simulates the post-fire regeneration of a ficticious forest landscape.  The spatial extent covers 300 * 300 pixels,
+ *  i.e. patches of 5 m * 5 m = 25 ha. The model runs in annual timesteps with the temporal horizon amounting to up to 100 years (maximum setting in the UI).
+ *  Upon start, the user may select the number of years to be simulated, the number of trees per hectare and the mixture ratio of the two species, "oak" and "birch".
+ *  Trees of either species are randomly distributed across the map. By default, a circular forest fire area of a 50 m radius is created in the center of the map.
+ *  Standing deadwood can be removed after the fire according to the checkbox input. The ecological consequences of this action are that light availability
+ *  will rise (decreased mortality and increased growth rate) while water availability will decrease due to less moisture being retained (increased mortality and decreased growth rate).
+ *  Light and water availability are calculated for each patch in the landscape scaled according to the minimum distance to the next trees.
+ *
+ * The model simulates the following processes:
+ *  seed dispersal:
+ *  seeds of either birch and oak are spread at random abundancy and random direction around the mother tree. Each tree in the landscape will disperse seeds.
+ *
+ *  mortality:  birch and oak have the same mortality rate. The survival rate is the probability of 1 - mortality  to survive the first year after dispersal.
+ *  growth:     the model assumes that trees grow at a constant rate, i.e. the number of trees in the landscape increases by the growth rate.
+ *  seeds / saplings that neither die nor advance into the next growth stage will remain in the same stage.
+ *
+ *  There are 5 growth stages: seed, height class 1, height class 2, height class 3 and height class 4.
+ *
+ *  Mortality and growth probabilites are multiplied with the patch-specific light and water availability to create a "mortality and growth factor".
+ *  This factor checked against a random float for each seed to determine if it survives or advances to the next growth stage.
+ *
+ *  Detailed function/procedure descriptions are provided in the respective function headers and line comments.
+ *  There are two classes: trees and patches
+ *  Each tree is and object of class tree with its own species, dispersal factor and maximum seed production according to its species.
+ *  Each patch is an object of class patch with its own coordinates, seed and sapling count and light and water availability.
+ *
+ * Model outputs:
+ *  The UI visualizes the landscape in a 2D grid with highlighted tree patches and patches with at least 1 seed or sapling.
+ *
+ *  Each species has two output graphs: seed and sapling population line series in the whole study area and the burnt area.
+ *
+ *  There is no file output for the model results, which would need to be implemented for model analysis.
+ *
+ *  Use of external information:
+ *  The lecturer Sebastian Hanß was consulted for the model idea and scope.
+ *
+ *  The large language model ChatGPT was used for code completion and debugging
+ *  OpenAI. (2023). ChatGPT (version 3.5) [Large language model]. https://chat.openai.com/chat
+ *
+ *  GitHub Copilot was used to for code and comment auto-completion.
+ *
+ *  Further code snippets, especially for mapping and charts were adapted from the sample models used in this course
+ *  "M.FES.726 Ecological Modelling with C++" by Sebastian Hanß
+ *  Max Luttermann's sample project was used as a reference for the implementation of the patch class
+ */
+
+
 // load class files
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -5,14 +92,12 @@
 #include "tree.h"
 
 // include necessary libraries
+#include <QImage>
 #include <iostream>
 #include <random>
 #include <vector>
-#include <QImage>
 #include <string>
 
-
-using namespace std;
 
 // constructor
 MainWindow::MainWindow(QWidget *parent)
@@ -70,10 +155,14 @@ std::uniform_int_distribution<int> rand_x_cor(0, x_size - 1);       // random x 
 std::uniform_int_distribution<int> rand_y_cor(0, y_size - 1);       // random y coordinate in case of rectangular map
 std::uniform_real_distribution<float> rand_float_01(0.0f, 1.0f);    // random float between 0 and 1 for dispersal distance and seedling survival
 
-// setup procedure grouping sub-procedures
+/**
+ * @brief MainWindow::on_setup_button_clicked
+ * Function to setup the map, patches, trees and burnt area as well as clearing the charts
+ */
 void MainWindow::on_setup_button_clicked()
 {
     ui->progress_output_textEdit->clear(); // clear the output in the ui
+    test_number_of_simulation_years();     // run the exemplary unit test, may comment out as it is not needed for the simulation
     setup_map();                    // create the map
     setup_patches();                // create the patches
     setup_trees();                  // create the trees
@@ -82,19 +171,18 @@ void MainWindow::on_setup_button_clicked()
     count_populations();            // count the populations of seeds in each patch (0 at beginning)
     clear_charts();                 // clear the population charts
     update_map();                   // update the map drawing
+    ui->progress_output_textEdit->append("setup completed");
 }
 
 /**
  * @brief MainWindow::on_go_button_clicked()
  * Function to simulate the annual dispersal and population dynamics procedures
  */
-
-
 void MainWindow::on_go_button_clicked()
 {
     // warning for zero trees
     if (N_trees == 0) {
-        cout << "Error: Cannot simulate with zero trees." << endl;
+        std::cout << "Error: Cannot simulate with zero trees." << std::endl;
         ui->progress_output_textEdit->append("Error: Cannot simulate with zero trees."); // print to output in ui as well
         return;
     }
@@ -193,7 +281,7 @@ void MainWindow::setup_burnt_area(){
     // user can determine the radius of the burnt area [m] and if deadwood is to be removed
     if (simulate_fire) {
         // output the number of trees before the fire
-        cout << "Number of trees before fire: " << trees.size() << endl;
+        std::cout << "Number of trees before fire: " << trees.size() << std::endl;
         ui->progress_output_textEdit->append("Number of trees before fire: " + QString::number(trees.size())); // print to output in ui as well
 
         // burnt patches emerge from the center of the map
@@ -213,7 +301,9 @@ void MainWindow::setup_burnt_area(){
         scene->addPixmap(QPixmap::fromImage(image)); // update the map with black burnt area to later check if patches are burnt
 
         // additional user input with spinBox: are the burnt trees removed or not
-        bool deadwood_removed = ui->deadwood_removed_checkBox->isChecked();
+        bool deadwood_removed = ui->deadwood_removed_checkBox->isChecked(); // update if burnt trees are removed after fire
+        int N_burnt_trees = 0;  // counter to print number of trees burnt after fire
+
         for (size_t i = 0; i < trees.size(); ++i) {
             if (image.pixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1]) == color_burnt_area) {
                 if (deadwood_removed) {
@@ -221,6 +311,7 @@ void MainWindow::setup_burnt_area(){
                     --i;
                 } else {
                     trees[i].set_burnt(); // set tree status to burnt, can therefore not disperse seeds anymore, but will still influence the light availability
+                    N_burnt_trees++;
                 }
             }
         }
@@ -233,8 +324,9 @@ void MainWindow::setup_burnt_area(){
         }
 
         // output the number of trees left after the fire
-        cout << "Number of trees after fire: " << trees.size() << endl;
-        ui->progress_output_textEdit->append("Number of trees after fire: " + QString::number(trees.size())); // print to output in ui as well
+        std::cout << "Number of trees after fire: " << trees.size() << std::endl;
+        ui->progress_output_textEdit->append("Number of burnt trees: " + QString::number(N_burnt_trees)); // print to output in ui as well
+        ui->progress_output_textEdit->append("Number of trees left after fire: " + QString::number(trees.size())); // print to output in ui as well
     }
 }
 
@@ -272,7 +364,6 @@ void MainWindow::setup_min_distance_to_tree() {
 
         }
     }
-    cout << "Patch: 1 has distance to tree: " << patches[1].distance_to_tree << " and light availability: " << patches[1].light_availability << " and water availability" << patches[1].water_availability << endl;
     scene->addPixmap(QPixmap::fromImage(image)); // update the map
 }
 
@@ -299,7 +390,7 @@ void MainWindow::perform_dispersal() {
                 int new_x = t.x_y_cor[0] + offset_x;
                 int new_y = t.x_y_cor[1] + offset_y;
 
-                // check if seed landed in the map extent
+                // check if seed landed in the map extent (no torus wrapping implemented)
                 if (new_x >= 0 && new_x < x_size && new_y >= 0 && new_y < y_size) {
 
                     image.setPixel(new_x, new_y, color_seeds);
@@ -399,12 +490,12 @@ void MainWindow::perform_pop_dynamics() {
  * population size counted separately for each species and for burnt patches
  */
 void MainWindow::count_populations() {
-    std::vector<int> birch_pop = {0, 0, 0, 0, 0};
+    std::vector<int> birch_pop = {0, 0, 0, 0, 0};               // initializing vectors for population size to 0
     std::vector<int> oak_pop = {0, 0, 0, 0, 0};
     std::vector<int> birch_pop_burnt_area = {0, 0, 0, 0, 0};
     std::vector<int> oak_pop_burnt_area = {0, 0, 0, 0, 0};
 
-    for (auto& p : patches) {
+    for (auto& p : patches) {                                   // loop over all patches
         birch_pop[0] += p.N_seeds[0];
         birch_pop[1] += p.N_height_class_1[0];
         birch_pop[2] += p.N_height_class_2[0];
@@ -417,7 +508,7 @@ void MainWindow::count_populations() {
         oak_pop[3] += p.N_height_class_3[1];
         oak_pop[4] += p.N_height_class_4[1];
 
-        if(p.burnt == true){
+        if(p.burnt == true){                                    // if patch is burnt, add population size to burnt area vector as well
             birch_pop_burnt_area[0] += p.N_seeds[0];
             birch_pop_burnt_area[1] += p.N_height_class_1[0];
             birch_pop_burnt_area[2] += p.N_height_class_2[0];
@@ -432,7 +523,7 @@ void MainWindow::count_populations() {
         }
     }
 
-    birch_pop_total.push_back(birch_pop);
+    birch_pop_total.push_back(birch_pop);                       // store population size in vectors, push back to add current year of the loop
     birch_pop_burnt_area_total.push_back(birch_pop_burnt_area);
     oak_pop_total.push_back(oak_pop);
     oak_pop_burnt_area_total.push_back(oak_pop_burnt_area);
@@ -443,29 +534,32 @@ void MainWindow::count_populations() {
  *  Function to "refresh" the map according to present population density of all seeds and saplings per patch
  * - N_seeds_saplings are scaled in green
  * - trees are displayed as 5 * 5 pixels for improved visibility
+ * - trees are displayed in grey if burnt
  */
-void MainWindow::update_map(){ // not used as of now
-    std::vector<int> N_seeds_saplings(patches.size(), 0);
-    for (unsigned int i = 0; i < patches.size(); i++) {
-        N_seeds_saplings[i] = patches[i].get_all_N_seeds_saplings();
+void MainWindow::update_map(){
+    std::vector<int> N_seeds_saplings(patches.size(), 0);               // vector to store total number of seeds and saplings per patch
+    for (unsigned int i = 0; i < patches.size(); i++) {                 // loop over all patches
+        N_seeds_saplings[i] = patches[i].get_all_N_seeds_saplings();    // store total number of seeds and saplings per patch
     }
-    auto max_N_seeds_saplings_iter = std::max_element(N_seeds_saplings.begin(), N_seeds_saplings.end());
-    int max_N_seeds_saplings = *max_N_seeds_saplings_iter;
-
-    for (auto& p : patches) {
-        int patch_pop = p.get_all_N_seeds_saplings();
-        // set pixel color based on total number of seedlings and saplings per patch (max density is full green)
+    auto max_N_seeds_saplings_iter = std::max_element(N_seeds_saplings.begin(), N_seeds_saplings.end()); // find maximum number of seeds and saplings per patch
+    int max_N_seeds_saplings = *max_N_seeds_saplings_iter;              // store maximum number of seeds and saplings per patch
+    for (auto& p : patches) {                                           // loop to set pixel color based on total number of seedlings and saplings per patch (max density is full green)
+        int patch_pop = p.get_all_N_seeds_saplings();                   // local patch population of all seeds and saplings
         if (patch_pop > 0){
             image.setPixelColor(p.x_y_cor[0], p.x_y_cor[1],  QColor(0, 255, 0, 255 * patch_pop / max_N_seeds_saplings));
         }
     }
     // trees mapped last to ensure they are visible
-    // display trees as 5 * 5 pixels for better visibility
+    // display trees as 5 * 5 pixels for better visibility, although they only occupy 1 patch
     for (auto& t : trees) {
         for(int i = -2; i <= 2; i++){
             for(int j = -2; j <= 2; j++){
                 if (t.x_y_cor[0] + i >= 0 && t.x_y_cor[0] + i < x_size && t.x_y_cor[1] + j >= 0 && t.x_y_cor[1] + j < y_size)
-                    image.setPixel(t.x_y_cor[0] + i, t.x_y_cor[1] + j, t.color);
+                    if(t.burnt == false){   // if tree is not burnt, display in species color
+                        image.setPixelColor(t.x_y_cor[0] + i, t.x_y_cor[1] + j, t.color);
+                    } else {                // if tree is burnt, display in grey
+                        image.setPixelColor(t.x_y_cor[0] + i, t.x_y_cor[1] + j, QColor(128, 128, 128));
+                    }
             }
         }
     }
@@ -491,13 +585,13 @@ void MainWindow::clear_charts()
     N_oak_burnt_area_chart->removeAllSeries();
 }
 
-/*
- Function to draw the four output charts in the ui
- - one series per species and life stage in all patches and in just the burnt area
- - 5 series per chart
- - values scaled to hectares for comparable output
+/**
+ * @brief MainWindow::draw_charts
+ *  Function to draw the four output charts in the ui
+ *   - one series per species and life stage in all patches and in just the burnt area
+ *   - 5 series per chart
+ *   - values scaled to hectares for comparable output
  */
-
 void MainWindow::draw_charts(){
     QLineSeries *N_birch_seeds_series = new QLineSeries();
     N_birch_seeds_series->setColor(Qt::black); // default color: blue
@@ -516,54 +610,54 @@ void MainWindow::draw_charts(){
     N_birch_hc4_series->setName("Height class 4");
 
     QLineSeries *N_birch_burnt_area_seeds_series = new QLineSeries();
-    N_birch_burnt_area_seeds_series->setColor(Qt::black); // default color: blue
+    N_birch_burnt_area_seeds_series->setColor(Qt::black);
     N_birch_burnt_area_seeds_series->setName("Seeds");
     QLineSeries *N_birch_burnt_area_hc1_series = new QLineSeries();
-    N_birch_burnt_area_hc1_series->setColor(Qt::black); // default color: blue
+    N_birch_burnt_area_hc1_series->setColor(Qt::black);
     N_birch_burnt_area_hc1_series->setName("Height class 1");
     QLineSeries *N_birch_burnt_area_hc2_series = new QLineSeries();
-    N_birch_burnt_area_hc2_series->setColor(Qt::black); // default color: blue
+    N_birch_burnt_area_hc2_series->setColor(Qt::black);
     N_birch_burnt_area_hc2_series->setName("Height class 2");
     QLineSeries *N_birch_burnt_area_hc3_series = new QLineSeries();
-    N_birch_burnt_area_hc3_series->setColor(Qt::black); // default color: blue
+    N_birch_burnt_area_hc3_series->setColor(Qt::black);
     N_birch_burnt_area_hc3_series->setName("Height class 3");
     QLineSeries *N_birch_burnt_area_hc4_series = new QLineSeries();
-    N_birch_burnt_area_hc4_series->setColor(Qt::black); // default color: blue
+    N_birch_burnt_area_hc4_series->setColor(Qt::black);
     N_birch_burnt_area_hc4_series->setName("Height class 4");
 
     QLineSeries *N_oak_seeds_series = new QLineSeries();
-    N_oak_seeds_series->setColor(Qt::black); // default color: blue
+    N_oak_seeds_series->setColor(Qt::black);
     N_oak_seeds_series->setName("Seeds");
     QLineSeries *N_oak_hc1_series = new QLineSeries();
-    N_oak_hc1_series->setColor(Qt::black); // default color: blue
+    N_oak_hc1_series->setColor(Qt::black);
     N_oak_hc1_series->setName("Height class 1");
     QLineSeries *N_oak_hc2_series = new QLineSeries();
-    N_oak_hc2_series->setColor(Qt::black); // default color: blue
+    N_oak_hc2_series->setColor(Qt::black);
     N_oak_hc2_series->setName("Height class 2");
     QLineSeries *N_oak_hc3_series = new QLineSeries();
-    N_oak_hc3_series->setColor(Qt::black); // default color: blue
+    N_oak_hc3_series->setColor(Qt::black);
     N_oak_hc3_series->setName("Height class 3");
     QLineSeries *N_oak_hc4_series = new QLineSeries();
-    N_oak_hc4_series->setColor(Qt::black); // default color: blue
+    N_oak_hc4_series->setColor(Qt::black);
     N_oak_hc4_series->setName("Height class 4");
 
     QLineSeries *N_oak_burnt_area_seeds_series = new QLineSeries();
-    N_oak_burnt_area_seeds_series->setColor(Qt::black); // default color: blue
+    N_oak_burnt_area_seeds_series->setColor(Qt::black);
     N_oak_burnt_area_seeds_series->setName("Seeds");
     QLineSeries *N_oak_burnt_area_hc1_series = new QLineSeries();
-    N_oak_burnt_area_hc1_series->setColor(Qt::black); // default color: blue
+    N_oak_burnt_area_hc1_series->setColor(Qt::black);
     N_oak_burnt_area_hc1_series->setName("Height class 1");
     QLineSeries *N_oak_burnt_area_hc2_series = new QLineSeries();
-    N_oak_burnt_area_hc2_series->setColor(Qt::black); // default color: blue
+    N_oak_burnt_area_hc2_series->setColor(Qt::black);
     N_oak_burnt_area_hc2_series->setName("Height class 2");
     QLineSeries *N_oak_burnt_area_hc3_series = new QLineSeries();
-    N_oak_burnt_area_hc3_series->setColor(Qt::black); // default color: blue
+    N_oak_burnt_area_hc3_series->setColor(Qt::black);
     N_oak_burnt_area_hc3_series->setName("Height class 3");
     QLineSeries *N_oak_burnt_area_hc4_series = new QLineSeries();
-    N_oak_burnt_area_hc4_series->setColor(Qt::black); // default color: blue
+    N_oak_burnt_area_hc4_series->setColor(Qt::black);
     N_oak_burnt_area_hc4_series->setName("Height class 4");
 
-    N_birch_seeds_series->clear();
+    N_birch_seeds_series->clear();                      // clear all graph series
     N_birch_hc1_series->clear();
     N_birch_hc2_series->clear();
     N_birch_hc3_series->clear();
@@ -627,6 +721,7 @@ void MainWindow::draw_charts(){
     QLegend *oakBurntAreaLegend = N_oak_burnt_area_chart->legend();
     oakBurntAreaLegend->setAlignment(Qt::AlignRight);
 
+    // add the series to the charts
     N_birch_pop_chart->addSeries(N_birch_seeds_series);
     N_birch_pop_chart->addSeries(N_birch_hc1_series);
     N_birch_pop_chart->addSeries(N_birch_hc2_series);
@@ -668,4 +763,21 @@ void MainWindow::draw_charts(){
     N_oak_burnt_area_chart->axisY()->setTitleText("population density [N/ha]");
 }
 
+/**
+ * @brief MainWindow::test_number_of_simulation_years
+ * Very simple unit test if the number of simulation years is initialized to 1
+ * @return false if the number of simulation years is not initialized to 01
+ */
+bool MainWindow::test_number_of_simulation_years() {
+    int expected_number_of_simulation_years = 1;
 
+    int value = 5;
+
+    if (value != initialized_number_of_simulation_years) {
+        std::cout << "The number of simulation years is not initialized to 1" << std::endl;
+        return false;
+    } else {
+        std::cout << "The number of simulation years is correctly initialized to 1" << std::endl;
+        return true;
+    }
+}

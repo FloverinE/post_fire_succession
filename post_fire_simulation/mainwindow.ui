@@ -18,7 +18,7 @@
     <property name="geometry">
      <rect>
       <x>270</x>
-      <y>10</y>
+      <y>20</y>
       <width>256</width>
       <height>192</height>
      </rect>
@@ -29,7 +29,7 @@
      <rect>
       <x>1040</x>
       <y>10</y>
-      <width>361</width>
+      <width>401</width>
       <height>381</height>
      </rect>
     </property>
@@ -37,9 +37,9 @@
    <widget class="QChartView" name="N_birch_pop_chart">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>610</x>
       <y>10</y>
-      <width>361</width>
+      <width>401</width>
       <height>381</height>
      </rect>
     </property>
@@ -47,9 +47,9 @@
    <widget class="QChartView" name="N_birch_burnt_area_chart">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>610</x>
       <y>410</y>
-      <width>361</width>
+      <width>401</width>
       <height>381</height>
      </rect>
     </property>
@@ -59,7 +59,7 @@
      <rect>
       <x>1040</x>
       <y>410</y>
-      <width>361</width>
+      <width>401</width>
       <height>381</height>
      </rect>
     </property>
@@ -117,6 +117,9 @@
     </property>
     <property name="text">
      <string>simulate fire?</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QCheckBox" name="deadwood_removed_checkBox">
@@ -256,6 +259,25 @@ to be simulated</string>
     </property>
     <property name="text">
      <string>Progress output</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_6">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>210</y>
+      <width>181</width>
+      <height>151</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>MAP LEGEND:
+
+BLACK: forest fire area 
+RED: birch trees 
+BLUE: oak trees
+GREEN: seeds and saplings 
+GREY: dead trees after fire</string>
     </property>
    </widget>
   </widget>

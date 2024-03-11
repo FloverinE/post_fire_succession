@@ -1,15 +1,22 @@
+/**
+ * TREE CLASS
+ */
+
 #include "tree.h"
 #include <QImage>
 #include <QColor>
 
-QRgb color_birch =  qRgb(255, 0, 0); // light blue color
-QRgb color_oak =    qRgb(0, 0, 255);   // brown color
+// colors for mapping
+QRgb color_birch =  qRgb(255, 0, 0); // red
+QRgb color_oak =    qRgb(0, 0, 255); // bluer
 
+// default constructor
 tree::tree()
 {
 
 }
 
+// constructor
 tree::tree(int id,
            std::vector<int> x_y_cor,
            char species,
@@ -24,6 +31,10 @@ tree::tree(int id,
     this -> color;
 }
 
+/**
+ * @brief tree::update_species_params
+ * Function to update the tree object's parameters according to the assigned species
+ */
 void tree::update_species_params() {
     if (species == 'b') {
         dispersal_factor = 20;
@@ -36,6 +47,10 @@ void tree::update_species_params() {
     }
 }
 
+/**
+* @brief tree::set_burnt
+* Function to set the tree as burnt if forest fire is simulated and the tree is located in the burnt area
+*/
 void tree::set_burnt() {
     burnt = true;
 }

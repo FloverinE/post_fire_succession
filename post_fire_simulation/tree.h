@@ -28,6 +28,7 @@ public:
     void set_burnt();                   // sets the tree as burnt (boolean) if forest fire is simulated, see tree.cpp
     bool burnt = false;                 // tree is not burnt by default
 
+    // no private variables for now as it was easier to not use any for now
 private:
 
 };

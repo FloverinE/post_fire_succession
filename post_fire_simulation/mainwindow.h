@@ -45,17 +45,19 @@ private slots:
     void clear_charts();
     void draw_charts();
 
+    bool test_number_of_simulation_years();
+
 private:
     Ui::MainWindow *ui;
     QGraphicsScene *scene;
     QImage image;  // Declare image as a member variable
 
-    //
+    //  colors used for mapping
     QRgb color_seeds = qRgb(0, 128, 0); // green color
     QRgb color_burnt_area = qRgb(0, 0, 0); // black color
 
 
-    // needed for plotting
+    // needed for plotting the output charts for each species and burnt area population subset
     QChart *N_birch_pop_chart;
     QChart *N_birch_burnt_area_chart;
     QChart *N_oak_pop_chart;

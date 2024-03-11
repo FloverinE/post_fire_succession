@@ -3,11 +3,10 @@ CONFIG += console c++17
 CONFIG -= app_bundle
 QT += testlib
 
-#CONFIG -= qt
+CONFIG -= qt
 
 SOURCES += \
         ../post_fire_simulation/patch.cpp \
-        main.cpp \
         test_patch.cpp
 
 HEADERS += \
