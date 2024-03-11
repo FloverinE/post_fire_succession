@@ -23,12 +23,12 @@ tree::tree(int id,
            int dispersal_factor,
            int max_seed_production)
 {
-    this -> id;
-    this -> x_y_cor;
-    this -> species;
-    this -> dispersal_factor;
-    this -> max_seed_production;
-    this -> color;
+//    this -> id;
+//    this -> x_y_cor;
+//    this -> species;
+//    this -> dispersal_factor;
+//    this -> max_seed_production;
+//    this -> color;
 }
 
 /**

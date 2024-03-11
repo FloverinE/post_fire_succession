@@ -140,8 +140,8 @@
      <rect>
       <x>30</x>
       <y>340</y>
-      <width>221</width>
-      <height>161</height>
+      <width>261</width>
+      <height>251</height>
      </rect>
     </property>
    </widget>
@@ -264,8 +264,8 @@ to be simulated</string>
    <widget class="QLabel" name="label_6">
     <property name="geometry">
      <rect>
-      <x>270</x>
-      <y>210</y>
+      <x>390</x>
+      <y>300</y>
       <width>181</width>
       <height>151</height>
      </rect>

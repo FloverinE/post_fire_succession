@@ -72,12 +72,13 @@
  *  There is no file output for the model results, which would need to be implemented for model analysis.
  *
  *  Use of external information:
- *  The lecturer Sebastian Hanß was consulted for the model idea and scope.
+ *  The lecturer Sebastian Hanß was consulted for the model idea and scope as well as coding advice.
  *
  *  The large language model ChatGPT was used for code completion and debugging
  *  OpenAI. (2023). ChatGPT (version 3.5) [Large language model]. https://chat.openai.com/chat
  *
  *  GitHub Copilot was used to for code and comment auto-completion.
+ *  GitHub, Inc. (2024). GitHub Copilot. https://github.com/features/copilot
  *
  *  Further code snippets, especially for mapping and charts were adapted from the sample models used in this course
  *  "M.FES.726 Ecological Modelling with C++" by Sebastian Hanß
@@ -142,11 +143,11 @@ MainWindow::~MainWindow()
 
 // define the size of the map
 // 1 patch = 1 pixel on the map = 5m x 5m = 25m^2
-const int x_size = 300;         // number of horizontal pixels
-const int y_size = 300;         // number of vertical pixels
-const int area_to_ha_conv_factor = x_size * y_size / 10000;             // conversion factor from x and y extent in pixels to hectares for number of trees per hectare
-const int patch_edge_m = 5;     // size of a patch  in meters
-const int pixel_to_ha_conv_factor = 100 / (patch_edge_m * patch_edge_m);  // conversion factor from pixels to hectares for population density
+const int x_size = 300;                                                   // number of horizontal pixels
+const int y_size = 300;                                                   // number of vertical pixels
+const int area_to_ha_conv_factor = x_size * y_size / 10000;               // conversion factor from x and y extent in pixels to hectares for number of trees per hectare
+const int patch_edge_m = 5;                                               // size of a patch  in meters
+const int pixel_to_ha_conv_factor = 10000 / (patch_edge_m * patch_edge_m);  // conversion factor from pixels to hectares for population density
 
 // declaration of random number generators
 std::random_device rd;                                              // used to obtain a seed for the random number engine
@@ -270,7 +271,6 @@ void MainWindow::setup_patches() {
   - burnt patches are painted black
   - deadwood removal checkbox determines the if burnt trees are removed and therefore more light, but less water availability
  */
-
 int N_burnt_patches = 0;    // count the number of burnt patches to calculate area
 
 void MainWindow::setup_burnt_area(){
@@ -298,6 +298,8 @@ void MainWindow::setup_burnt_area(){
                 }
             }
         }
+        std::cout<<"Number of burnt patches: " << N_burnt_patches << " = " << N_burnt_patches / pixel_to_ha_conv_factor << " ha" << std::endl;
+        ui->progress_output_textEdit->append("Number of burnt patches: " + QString::number(N_burnt_patches) + " = " + QString::number(N_burnt_patches / pixel_to_ha_conv_factor) + " ha"); // print to output in ui as well
         scene->addPixmap(QPixmap::fromImage(image)); // update the map with black burnt area to later check if patches are burnt
 
         // additional user input with spinBox: are the burnt trees removed or not
@@ -773,7 +775,7 @@ bool MainWindow::test_number_of_simulation_years() {
 
     int value = 5;
 
-    if (value != initialized_number_of_simulation_years) {
+    if (value != expected_number_of_simulation_years) {
         std::cout << "The number of simulation years is not initialized to 1" << std::endl;
         return false;
     } else {
